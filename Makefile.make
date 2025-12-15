@@ -11,6 +11,7 @@ BUILD_DIR = build
 # Source files
 BOOTLOADER_SRC = $(SRC_DIR)/bootloader/Bootloader.asm
 KERNEL_SRC     = $(SRC_DIR)/Kernel.asm
+LPFS_SRC       = $(SRC_DIR)/LPFS.asm
 
 # Output binaries
 BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
@@ -28,9 +29,9 @@ $(BOOTLOADER_BIN): $(BOOTLOADER_SRC)
 	$(ASM) $(ASMFLAGS) $< -o $@
 
 # Compile kernel
-$(KERNEL_BIN): $(KERNEL_SRC)
+$(KERNEL_BIN): $(KERNEL_SRC) $(LPFS_SRC)
 	mkdir -p $(BUILD_DIR)
-	$(ASM) $(ASMFLAGS) $< -o $@
+	$(ASM) $(ASMFLAGS) -I$(SRC_DIR)/ $(KERNEL_SRC) -o $@
 
 # Create floppy image and copy binaries
 $(IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN)

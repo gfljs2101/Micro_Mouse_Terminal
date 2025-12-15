@@ -2,6 +2,7 @@
 [ORG 0x0000]    ; Kernel is loaded at 0x8000:0000 by the bootloader
 
 start:
+    mov [kernel_boot_drive], dl ; Save boot drive number from bootloader
     call clear_screen
     call welcome_screen
     call clear_screen
@@ -77,6 +78,19 @@ print_string:
     int 0x10
     jmp .next_char
 .done:
+    ret
+
+; -----------------------------
+; Print newline
+; -----------------------------
+print_newline:
+    pusha
+    mov ah, 0x0E
+    mov al, 13
+    int 0x10
+    mov al, 10
+    int 0x10
+    popa
     ret
 
 ; -----------------------------
@@ -176,8 +190,17 @@ handle_command:
     mov di, cmd_shutdown
     call strcmp
     cmp ax, 0
-    jne .unknown
+    jne .check_ls
     call shutdown_computer
+    ret
+
+.check_ls:
+    mov si, input_buf
+    mov di, cmd_ls
+    call strcmp
+    cmp ax, 0
+    jne .unknown
+    call list_root_directory
     ret
 
 .empty_input:
@@ -239,14 +262,21 @@ msg_welcome      db 13,10,"Micro Mouse Terminal by LevelPack1218",13,10,0
 msg_press_key    db 13,10,"Press any key to continue...",13,10,0
 
 prompt           db 13,10,"MMT> ",0
-msg_help         db 13,10,"Commands: help, cls, reboot, shutdown",13,10,0
+msg_help         db 13,10,"Commands: help, cls, reboot, shutdown, ls",13,10,0
 msg_unknown      db 13,10,"Unknown command",13,10,0
 
 cmd_help         db "help",0
 cmd_cls          db "cls",0
 cmd_reboot       db "reboot",0
 cmd_shutdown     db "shutdown",0
+cmd_ls           db "ls",0
 
 input_buf        times 128 db 0
+
+; Variables for LPFS
+kernel_boot_drive db 0
+fs_buffer        times 512 db 0
+
+%include "LPFS.asm"
 
 times 8192-($-$$) db 0
