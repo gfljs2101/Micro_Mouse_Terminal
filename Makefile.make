@@ -11,7 +11,6 @@ BUILD_DIR = build
 # Source files
 BOOTLOADER_SRC = $(SRC_DIR)/bootloader/Bootloader.asm
 KERNEL_SRC     = $(SRC_DIR)/Kernel.asm
-LPFS_SRC       = $(SRC_DIR)/LPFS.asm
 
 # Output binaries
 BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
@@ -29,18 +28,13 @@ $(BOOTLOADER_BIN): $(BOOTLOADER_SRC)
 	$(ASM) $(ASMFLAGS) $< -o $@
 
 # Compile kernel
-$(KERNEL_BIN): $(KERNEL_SRC) $(LPFS_SRC)
+$(KERNEL_BIN): $(KERNEL_SRC)
 	mkdir -p $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) -I$(SRC_DIR)/ $(KERNEL_SRC) -o $@
 
-# Create floppy image and copy binaries
-$(IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN)
-	# Create empty 1.44 MB floppy image
-	dd if=/dev/zero of=$(IMG) bs=512 count=2880
-	# Write bootloader to first sector
-	dd if=$(BOOTLOADER_BIN) of=$(IMG) bs=512 count=1 conv=notrunc
-	# Copy kernel into image using mtools
-	mcopy -i $(IMG) $(KERNEL_BIN) ::
+# Create floppy image using Python script
+$(IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN) create_image.py example.txt
+	python3 create_image.py
 
 # Clean generated files
 .PHONY: clean all
