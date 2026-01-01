@@ -11,10 +11,12 @@ BUILD_DIR = build
 # Source files
 BOOTLOADER_SRC = $(SRC_DIR)/bootloader/Bootloader.asm
 KERNEL_SRC     = $(SRC_DIR)/Kernel.asm
+PROGRAM_SRC    = $(SRC_DIR)/programs/hello.asm
 
 # Output binaries
 BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
 KERNEL_BIN     = $(BUILD_DIR)/kernel.bin
+PROGRAM_BIN    = $(BUILD_DIR)/hello.com
 
 # Final floppy image
 IMG = $(BUILD_DIR)/MMT.img
@@ -32,16 +34,22 @@ $(KERNEL_BIN): $(KERNEL_SRC)
 	mkdir -p $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) $< -o $@
 
+# Compile program
+$(PROGRAM_BIN): $(PROGRAM_SRC)
+	mkdir -p $(BUILD_DIR)
+	$(ASM) $(ASMFLAGS) $< -o $@
+
 # Create floppy image and copy binaries
-$(IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN)
+$(IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN) $(PROGRAM_BIN)
 	# Create empty 1.44 MB floppy image
 	dd if=/dev/zero of=$(IMG) bs=512 count=2880
 	# Write bootloader to first sector
 	dd if=$(BOOTLOADER_BIN) of=$(IMG) bs=512 count=1 conv=notrunc
-	# Copy kernel into image using mtools
+	# Copy kernel and program into image using mtools
 	mcopy -i $(IMG) $(KERNEL_BIN) ::
+	mcopy -i $(IMG) $(PROGRAM_BIN) ::
 
 # Clean generated files
 .PHONY: clean all
 clean:
-	rm -f $(BUILD_DIR)/*.bin $(IMG)
+	rm -f $(BUILD_DIR)/*.bin $(BUILD_DIR)/*.com $(IMG)
