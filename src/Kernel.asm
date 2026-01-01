@@ -183,18 +183,23 @@ handle_command:
     ret
 
 .try_com_file:
-    mov si, input_buf
+    mov di, input_buf
+    mov si, di
     mov cx, 0xFFFF
     xor al, al
     repne scasb
-    dec si
-    cmp byte [si-1], 'm'
+    mov ax, di
+    sub ax, si
+    dec ax
+    cmp ax, 4
+    jb .unknown
+    cmp byte [di-2], 'm'
     jne .unknown
-    cmp byte [si-2], 'o'
+    cmp byte [di-3], 'o'
     jne .unknown
-    cmp byte [si-3], 'c'
+    cmp byte [di-4], 'c'
     jne .unknown
-    cmp byte [si-4], '.'
+    cmp byte [di-5], '.'
     jne .unknown
     mov si, input_buf
     call parse_filename
@@ -319,12 +324,14 @@ shutdown_computer:
 ; Interrupts
 ; -----------------------------
 init_idt:
+    push es
     cli
     mov ax, 0
     mov es, ax
     mov word [es:0x20*4], int20_handler
     mov [es:0x20*4+2], cs
     sti
+    pop es
     ret
 
 int20_handler:
