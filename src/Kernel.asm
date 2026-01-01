@@ -178,27 +178,35 @@ handle_command:
     mov di, cmd_shutdown
     call strcmp
     cmp ax, 0
-    jne .check_run
+    jne .try_com_file
     call shutdown_computer
     ret
 
-.check_run:
+.try_com_file:
     mov si, input_buf
-    mov di, cmd_run
-    call strcmp
-    cmp ax, 0
+    mov cx, 0xFFFF
+    xor al, al
+    repne scasb
+    dec si
+    cmp byte [si-1], 'm'
+    jne .unknown
+    cmp byte [si-2], 'o'
+    jne .unknown
+    cmp byte [si-3], 'c'
+    jne .unknown
+    cmp byte [si-4], '.'
     jne .unknown
     mov si, input_buf
-    add si, 4
     call parse_filename
     call find_file
     cmp ax, 0
     je .not_found
     mov bx, 0x9000
     mov es, bx
-    mov bx, 0x0100
+    mov di, 0x0100
     call load_file
     jmp 0x9000:0x0100
+
 .not_found:
     mov si, msg_not_found
     call print_string
@@ -466,13 +474,12 @@ msg_welcome      db 13,10,"Micro Mouse Terminal by LevelPack1218",13,10,0
 msg_press_key    db 13,10,"Press any key to continue...",13,10,0
 
 prompt           db 13,10,"MMT> ",0
-msg_help         db 13,10,"Commands: help, cls, reboot, shutdown, run",13,10,0
+msg_help         db 13,10,"Commands: help, cls, reboot, shutdown",13,10,0
 msg_unknown      db 13,10,"Unknown command",13,10,0
 msg_not_found    db 13,10,"File not found",13,10,0
 
 cmd_help         db "help",0
 cmd_cls          db "cls",0
-cmd_run          db "run",0
 cmd_reboot       db "reboot",0
 cmd_shutdown     db "shutdown",0
 
